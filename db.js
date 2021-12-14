@@ -57,25 +57,6 @@ User.authenticate = async ({ username, password }) => {
   throw error;
 };
 
-const syncAndSeed = async () => {
-  await conn.sync({ force: true });
-  const credentials = [
-    { username: "lucy", password: "lucy_pw" },
-    { username: "moe", password: "moe_pw" },
-    { username: "larry", password: "larry_pw" },
-  ];
-  const [lucy, moe, larry] = await Promise.all(
-    credentials.map((credential) => User.create(credential))
-  );
-  return {
-    users: {
-      lucy,
-      moe,
-      larry,
-    },
-  };
-};
-
 User.beforeCreate(async (user) => {
   if (user.changed("password")) {
     //this needs to be awaited because we are putting the hashed password in the database.
@@ -84,9 +65,53 @@ User.beforeCreate(async (user) => {
   }
 });
 
+const Note = conn.define("note", {
+  text: STRING,
+});
+
+//ASSOCIATIONS HERE
+
+User.hasMany(Note);
+Note.belongsTo(User);
+
+const syncAndSeed = async () => {
+  await conn.sync({ force: true });
+  const credentials = [
+    { username: "lucy", password: "lucy_pw" },
+    { username: "moe", password: "moe_pw" },
+    { username: "larry", password: "larry_pw" },
+  ];
+  const notes = [
+    { text: "hello", userId: 1 },
+    { text: "goodbye", userId: 2 },
+    { text: "hola", userId: 3 },
+    { text: "lkdhfklsdf", userId: 1 },
+  ];
+  const [lucy, moe, larry] = await Promise.all(
+    credentials.map((credential) => User.create(credential))
+  );
+  const [note1, note2, note3, note4] = await Promise.all(
+    notes.map((note) => Note.create(note))
+  );
+  return {
+    users: {
+      lucy,
+      moe,
+      larry,
+    },
+    notes: {
+      note1,
+      note2,
+      note3,
+      note4,
+    },
+  };
+};
+
 module.exports = {
   syncAndSeed,
   models: {
     User,
+    Note,
   },
 };
