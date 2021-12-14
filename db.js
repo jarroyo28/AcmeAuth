@@ -41,6 +41,8 @@ User.byToken = async (token) => {
 };
 
 User.authenticate = async ({ username, password }) => {
+  bcrypt.compare();
+
   const user = await User.findOne({
     where: {
       username,
@@ -76,11 +78,11 @@ const syncAndSeed = async () => {
 };
 
 User.beforeCreate(async (user) => {
-  const saltRounds = "catsanddogs";
-  bcrypt.hash(user.password, saltRounds, function (err, hash) {
-    // Store hash in your password DB.
-    user.password = user.password + saltRounds;
-  });
+  if (user.changed("password")) {
+    //this needs to be awaited because we are putting the hashed password in the database.
+    //the second argument is salt rounds.  That's the number of times the hash is running.  every time you hash a password it gets longer because it is transformed.
+    user.password = await bcrypt.hash(user.password, 3);
+  }
 });
 
 module.exports = {
