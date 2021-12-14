@@ -1,8 +1,12 @@
+require("dotenv").config(); //this loads the .env file.  the contents of the .env file will initialize values for environmental variables that have not already been set (e.g. the secret key)
+// console.log("environmental variables: ", process.env.SECRET_KEY);
+
 const Sequelize = require("sequelize");
 const { STRING } = Sequelize;
 const config = {
   logging: false,
 };
+const jwt = require("jsonwebtoken");
 
 if (process.env.LOGGING) {
   delete config.logging;
@@ -19,8 +23,10 @@ const User = conn.define("user", {
 
 User.byToken = async (token) => {
   try {
-    const user = await User.findByPk(token);
-    if (user) {
+    const verifiedToken = jwt.verify(token, process.env.SECRET_KEY);
+
+    if (verifiedToken) {
+      const user = await User.findByPk(verifiedToken.id);
       return user;
     }
     const error = Error("bad credentials");
@@ -41,7 +47,8 @@ User.authenticate = async ({ username, password }) => {
     },
   });
   if (user) {
-    return user.id;
+    const token = jwt.sign({ id: user.id }, process.env.SECRET_KEY);
+    return token;
   }
   const error = Error("bad credentials");
   error.status = 401;
