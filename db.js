@@ -1,5 +1,6 @@
 require("dotenv").config(); //this loads the .env file.  the contents of the .env file will initialize values for environmental variables that have not already been set (e.g. the secret key)
 // console.log("environmental variables: ", process.env.SECRET_KEY);
+const bcrypt = require("bcrypt");
 
 const Sequelize = require("sequelize");
 const { STRING } = Sequelize;
@@ -73,6 +74,14 @@ const syncAndSeed = async () => {
     },
   };
 };
+
+User.beforeCreate(async (user) => {
+  const saltRounds = "catsanddogs";
+  bcrypt.hash(user.password, saltRounds, function (err, hash) {
+    // Store hash in your password DB.
+    user.password = user.password + saltRounds;
+  });
+});
 
 module.exports = {
   syncAndSeed,
