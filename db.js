@@ -41,15 +41,14 @@ User.byToken = async (token) => {
 };
 
 User.authenticate = async ({ username, password }) => {
-  bcrypt.compare();
-
   const user = await User.findOne({
     where: {
       username,
-      password,
     },
   });
-  if (user) {
+
+  const correct = await bcrypt.compare(password, user.password);
+  if (correct) {
     const token = jwt.sign({ id: user.id }, process.env.SECRET_KEY);
     return token;
   }
